@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .logout-btn {
+            padding: 8px 15px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Manager Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="panel">
+        <h2>Assign Work</h2>
+        <div class="form-group">
+            <label for="employeeSelect">Employee:</label>
+            <select id="employeeSelect">
+                <option value="">Select Employee</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="employeeSelect">Employee:</label>
+            <select id="employeeSelect">
+                <option value="">Select Employee</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="projectName">Project Name:</label>
+            <input type="text" id="projectName" placeholder="Enter project name">
+        </div>
+        <div class="form-group">
+            <label for="taskDescription">Task Description:</label>
+            <textarea id="taskDescription" rows="3" placeholder="Enter task details"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="dueDate">Due Date:</label>
+            <input type="date" id="dueDate">
+        </div>
+        <button onclick="assignTask()">Assign Task</button>
+    </div>
+    
+    <div class="panel">
+        <h2>Current Assignments</h2>
+        <table id="assignmentsTable">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Project</th>
+                    <th>Task</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load employees and assignments on page load
+        window.onload = function() {
+            loadEmployees();
+            loadAssignments();
+        };
+
+        function loadEmployees() {
+            const employeeSelect = document.getElementById('employeeSelect');
+            const users = JSON.parse(localStorage.getItem('users'));
+            
+            // Clear existing options except the first one
+            while (employeeSelect.options.length > 1) {
+                employeeSelect.remove(1);
+            }
+            
+            // Add employee options
+            users.forEach(user => {
+                if (user.role === 'employee') {
+                    const option = document.createElement('option');
+                    option.value = user.username;
+                    option.textContent = user.name || user.username;
+                    employeeSelect.appendChild(option);
+                }
+            });
+        }
+
+        function assignTask() {
+            const employeeSelect = document.getElementById('employeeSelect');
+            const projectName = document.getElementById('projectName');
+            const taskDescription = document.getElementById('taskDescription');
+            const dueDate = document.getElementById('dueDate');
+            
+            if (!employeeSelect.value || !projectName.value || !taskDescription.value || !dueDate.value) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            const assignments = JSON.parse(localStorage.getItem('assignments'));
+            
+            assignments.push({
+                employee: employeeSelect.options[employeeSelect.selectedIndex].text,
+                employeeUsername: employeeSelect.value,
+                project: projectName.value,
+                task: taskDescription.value,
+                dueDate: dueDate.value,
+                status: 'Pending',
+                assignedDate: new Date().toISOString().split('T')[0]
+            });
+            
+            localStorage.setItem('assignments', JSON.stringify(assignments));
+            
+            // Clear form
+            projectName.value = '';
+            taskDescription.value = '';
+            dueDate.value = '';
+            
+            // Refresh table
+            loadAssignments();
+        }
+
+        function loadAssignments() {
+            const tableBody = document.querySelector('#assignmentsTable tbody');
+            const assignments = JSON.parse(localStorage.getItem('assignments'));
+            
+            tableBody.innerHTML = '';
+            
+            assignments.forEach(assignment => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${assignment.employee}</td>
+                    <td>${assignment.project}</td>
+                    <td>${assignment.task}</td>
+                    <td>${assignment.dueDate}</td>
+                    <td>${assignment.status}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

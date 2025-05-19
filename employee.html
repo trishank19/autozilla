@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .logout-btn {
+            padding: 8px 15px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin-right: 5px;
+        }
+        .complete-btn {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Employee Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="panel">
+        <h2>My Tasks</h2>
+        <table id="tasksTable">
+            <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Task</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="panel">
+        <h2>Create Work Schedule</h2>
+        <div class="form-group">
+            <label for="taskSelect">Task:</label>
+            <select id="taskSelect">
+                <option value="">Select Task</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="workDate">Date:</label>
+            <input type="date" id="workDate">
+        </div>
+        <div class="form-group">
+            <label for="startTime">Start Time:</label>
+            <input type="time" id="startTime">
+        </div>
+        <div class="form-group">
+            <label for="endTime">End Time:</label>
+            <input type="time" id="endTime">
+        </div>
+        <button onclick="addSchedule()">Add to Schedule</button>
+    </div>
+    
+    <div class="panel">
+        <h2>My Schedule</h2>
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Task</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Get current user
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        
+        if (!currentUser || currentUser.role !== 'employee') {
+            window.location.href = 'index.html';
+        }
+
+        // Load data on page load
+        window.onload = function() {
+            loadTasks();
+            loadSchedule();
+        };
+
+        function loadTasks() {
+            const taskSelect = document.getElementById('taskSelect');
+            const tableBody = document.querySelector('#tasksTable tbody');
+            const assignments = JSON.parse(localStorage.getItem('assignments'));
+            
+            // Clear existing options except the first one
+            while (taskSelect.options.length > 1) {
+                taskSelect.remove(1);
+            }
+            
+            tableBody.innerHTML = '';
+            
+            // Filter assignments for current user
+            const myTasks = assignments.filter(task => task.employeeUsername === currentUser.username);
+            
+            myTasks.forEach(task => {
+                // Add to tasks table
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${task.project}</td>
+                    <td>${task.task}</td>
+                    <td>${task.dueDate}</td>
+                    <td>${task.status}</td>
+                    <td>
+                        <button class="action-btn complete-btn" onclick="markComplete('${task.employeeUsername}', '${task.assignedDate}')">
+                            Mark Complete
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+                
+                // Add to task select dropdown if status is pending
+                if (task.status === 'Pending') {
+                    const option = document.createElement('option');
+                    option.value = `${task.employeeUsername}|${task.assignedDate}`;
+                    option.textContent = `${task.project} - ${task.task}`;
+                    taskSelect.appendChild(option);
+                }
+            });
+        }
+
+        function markComplete(employeeUsername, assignedDate) {
+            const assignments = JSON.parse(localStorage.getItem('assignments'));
+            
+            const taskIndex = assignments.findIndex(task => 
+                task.employeeUsername === employeeUsername && 
+                task.assignedDate === assignedDate
+            );
+            
+            if (taskIndex !== -1) {
+                assignments[taskIndex].status = 'Completed';
+                localStorage.setItem('assignments', JSON.stringify(assignments));
+                loadTasks(); // Refresh the tasks list
+            }
+        }
+
+        function addSchedule() {
+            const taskSelect = document.getElementById('taskSelect');
+            const workDate = document.getElementById('workDate');
+            const startTime = document.getElementById('startTime');
+            const endTime = document.getElementById('endTime');
+            
+            if (!taskSelect.value || !workDate.value || !startTime.value || !endTime.value) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            // Get the selected task details
+            const [employeeUsername, assignedDate] = taskSelect.value.split('|');
+            const assignments = JSON.parse(localStorage.getItem('assignments'));
+            
+            const selectedTask = assignments.find(task => 
+                task.employeeUsername === employeeUsername && 
+                task.assignedDate === assignedDate
+            );
+            
+            if (!selectedTask) {
+                alert('Selected task not found');
+                return;
+            }
+            
+            // Add to schedules
+            const schedules = JSON.parse(localStorage.getItem('schedules'));
+            
+            schedules.push({
+                employeeUsername: currentUser.username,
+                project: selectedTask.project,
+                task: selectedTask.task,
+                date: workDate.value,
+                startTime: startTime.value,
+                endTime: endTime.value
+            });
+            
+            localStorage.setItem('schedules', JSON.stringify(schedules));
+            
+            // Clear form
+            workDate.value = '';
+            startTime.value = '';
+            endTime.value = '';
+            
+            // Refresh schedule table
+            loadSchedule();
+        }
+
+        function loadSchedule() {
+            const tableBody = document.querySelector('#scheduleTable tbody');
+            const schedules = JSON.parse(localStorage.getItem('schedules'));
+            
+            tableBody.innerHTML = '';
+            
+            // Filter schedules for current user
+            const mySchedules = schedules.filter(schedule => 
+                schedule.employeeUsername === currentUser.username
+            );
+            
+            mySchedules.forEach((schedule, index) => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${schedule.date}</td>
+                    <td>${schedule.startTime}</td>
+                    <td>${schedule.endTime}</td>
+                    <td>${schedule.task}</td>
+                    <td>
+                        <button class="action-btn" onclick="removeSchedule(${index})">
+                            Remove
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function removeSchedule(index) {
+            const schedules = JSON.parse(localStorage.getItem('schedules'));
+            
+            if (index >= 0 && index < schedules.length) {
+                schedules.splice(index, 1);
+                localStorage.setItem('schedules', JSON.stringify(schedules));
+                loadSchedule();
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

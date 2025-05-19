@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Management System - Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 350px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .role-selector {
+            margin-bottom: 20px;
+        }
+        .role-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Work Management System</h1>
+        
+        <div class="role-selector">
+            <label for="role">Login as:</label>
+            <select id="role">
+                <option value="employee">Employee</option>
+                <option value="manager">Manager</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" placeholder="Enter your username">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        
+        <button onclick="login()">Login</button>
+    </div>
+
+    <script>
+        // Sample user data
+        const users = [
+            { username: "manager", password: "manager123", role: "manager" },
+            { username: "john", password: "john123", role: "employee", name: "John Doe" },
+            { username: "jane", password: "jane123", role: "employee", name: "Jane Smith" }
+        ];
+
+        // Initialize localStorage data if not exists
+        if (!localStorage.getItem('users')) {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+        
+        if (!localStorage.getItem('assignments')) {
+            localStorage.setItem('assignments', JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('schedules')) {
+            localStorage.setItem('schedules', JSON.stringify([]));
+        }
+
+        function login() {
+            const role = document.getElementById('role').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const storedUsers = JSON.parse(localStorage.getItem('users'));
+            const user = storedUsers.find(u => u.username === username && u.password === password && u.role === role);
+            
+            if (user) {
+                // Store current user in session
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                
+                if (role === 'manager') {
+                    window.location.href = 'manager.html';
+                } else {
+                    window.location.href = 'employee.html';
+                }
+            } else {
+                alert('Invalid credentials or role mismatch');
+            }
+        }
+    </script>
+</body>
+</html>
